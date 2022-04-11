@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-// aro is a setting to enable aro-only modifications
+// aro is a setting to enable Aro-only modifications
 var aro bool
 
 // OutboundType is a strategy for how egress from cluster is achieved.
@@ -20,6 +20,17 @@ const (
 	// UserDefinedRoutingOutboundType uses user defined routing for egress from the cluster.
 	// see https://docs.microsoft.com/en-us/azure/virtual-network/virtual-networks-udr-overview
 	UserDefinedRoutingOutboundType OutboundType = "UserDefinedRouting"
+)
+
+const (
+	// Not yet defined if platform is Aro.
+	unknownAro int = 0
+
+	// Platform is Aro.
+	isAro int = 1
+
+	// Platform is not Aro.
+	isNotAro = 2
 )
 
 // Platform stores all the global configuration that all machinesets
@@ -84,6 +95,8 @@ type Platform struct {
 	//
 	// +optional
 	ResourceGroupName string `json:"resourceGroupName,omitempty"`
+
+	aro int
 }
 
 // CloudEnvironment is the name of the Azure cloud environment
@@ -130,5 +143,25 @@ func (p *Platform) ClusterResourceGroupName(infraID string) string {
 
 // IsARO returns true if ARO-only modifications are enabled
 func (p *Platform) IsARO() bool {
+	if p.aro == isAro {
+		return true
+	}
+	if p.aro == isNotAro {
+		return false
+	}
+	if aro {
+		p.aro = isAro
+	} else {
+		p.aro = isNotAro
+	}
 	return aro
+}
+
+// SetAro sets the ARO-only modifications flag based on input
+func (p *Platform) SetAro(aro bool) {
+	if aro {
+		p.aro = isAro
+	} else {
+		p.aro = isNotAro
+	}
 }
